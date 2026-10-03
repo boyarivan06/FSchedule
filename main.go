@@ -27,9 +27,14 @@ func main() {
 	}(conn, ctx)
 	pool, err := pgxpool.New(ctx, connStr)
 	userRepo := &database.UserRepository{Db: pool}
-	user, err := userRepo.GetOneUserById(ctx, 1)
+	// business logic
+	err = userRepo.Update(ctx, 2, map[string]string{"username": "egor"})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ошибка %v\n", err)
 	}
-	fmt.Println("got user", user.Username)
+	user, err := userRepo.GetById(ctx, 2)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ошибка %v\n", err)
+	}
+	fmt.Println("got user", user)
 }
