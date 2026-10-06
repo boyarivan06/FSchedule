@@ -1,40 +1,81 @@
 package main
 
 import (
+	"FSchedule/api"
 	"FSchedule/database"
 	"context"
-	"fmt"
+	"errors"
+	"log/slog"
+	"net"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
+	// database
 	const connStr = "postgres://go_user:machine_banana@localhost:5432/f_schedule"
-
-	ctx := context.Background()
-	conn, err := pgx.Connect(context.Background(), connStr)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	initCtx, cancelInit := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelInit()
+	pool, err := pgxpool.New(initCtx, connStr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Не удалось подключиться к базе данных: %v\n", err)
+		logger.Error("pgxpool.New", "err", err)
 		os.Exit(1)
 	}
-	defer func(conn *pgx.Conn, ctx context.Context) {
-		err := conn.Close(ctx)
-		if err != nil {
-			fmt.Println("aaaa not closing")
+	defer pool.Close()
+	if err := pool.Ping(initCtx); err != nil {
+		logger.Error("db ping", "err", err)
+		os.Exit(1)
+	}
+	storage := database.NewStorage(pool)
+	handler := api.NewHandler(storage, logger)
+	router := api.NewRouter(handler, logger)
+	// app
+
+	srv := &http.Server{
+		Addr:              ":8080",
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		BaseContext: func(_ net.Listener) context.Context {
+			return context.Background()
+		},
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		logger.Info("server starting", "addr", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
 		}
-	}(conn, ctx)
-	pool, err := pgxpool.New(ctx, connStr)
-	userRepo := &database.UserRepository{Db: pool}
-	// business logic
-	err = userRepo.Update(ctx, 2, map[string]string{"username": "egor"})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "ошибка %v\n", err)
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case err := <-errCh:
+		logger.Error("server failed", "err", err)
+		os.Exit(1)
+	case sig := <-stop:
+		logger.Info("shutdown signal received", "signal", sig.String())
 	}
-	user, err := userRepo.GetById(ctx, 2)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "ошибка %v\n", err)
+
+	initCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(initCtx); err != nil {
+		logger.Error("graceful shutdown failed", "err", err)
+		_ = srv.Close()
+		os.Exit(1)
 	}
-	fmt.Println("got user", user)
+
+	logger.Info("server stopped gracefully")
 }

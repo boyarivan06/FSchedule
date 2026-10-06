@@ -17,6 +17,11 @@ func (repo *UserRepository) GetById(ctx context.Context, id int) (User, error) {
 	err := repo.Db.QueryRow(ctx, "SELECT * FROM users WHERE id = $1", id).Scan(&user.ID, &user.Username)
 	return user, err
 }
+func (repo *UserRepository) GetByUsername(ctx context.Context, username string) (User, error) {
+	var user User
+	err := repo.Db.QueryRow(ctx, "SELECT * FROM users WHERE username = $1", username).Scan(&user.ID, &user.Username)
+	return user, err
+}
 func (repo *UserRepository) GetManyByParams(ctx context.Context, params map[string]string) ([]User, error) {
 	whereQuery, args := buildQuery(params, " AND ")
 	var users []User
