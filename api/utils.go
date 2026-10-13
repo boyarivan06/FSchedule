@@ -1,6 +1,7 @@
 package api
 
 import (
+	"FSchedule/database"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -32,4 +33,13 @@ func writeError(w http.ResponseWriter, status int, msg string) {
 
 func writeNoContent(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type Handler struct {
+	store  *database.Storage
+	logger *slog.Logger
+}
+
+func NewHandler(store *database.Storage, logger *slog.Logger) *Handler {
+	return &Handler{store: store, logger: logger}
 }

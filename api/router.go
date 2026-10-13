@@ -22,13 +22,13 @@ func NewRouter(h *Handler, logger *slog.Logger) http.Handler {
 		r.Put("/users/{id}", h.UpdateUser)
 		r.Delete("/users/{id}", h.DeleteUser)
 		// children
-		/*r.Get("/children", h.GetChildren)
+		r.Get("/children", h.GetChildren)
 		r.Get("/children/{id}", h.GetChild)
 		r.Post("/children", h.CreateChild)
 		r.Put("/children/{id}", h.UpdateChild)
 		r.Delete("/children/{id}", h.DeleteChild)
 		// events
-		r.Get("/events", h.GetEvents)
+		/*r.Get("/events", h.GetEvents)
 		r.Get("/events/{id}", h.GetEvent)
 		r.Post("/events", h.CreateEvent)
 		r.Put("/events/{id}", h.UpdateEvent)

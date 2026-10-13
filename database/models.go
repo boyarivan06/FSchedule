@@ -1,6 +1,6 @@
 package database
 
-// При добавлении полей добавить в разрешённые в utils.go
+// При добавлении полей добавить их в параметры в структурах {type}Params в db_{type}_operations.go
 import "time"
 
 type User struct {
