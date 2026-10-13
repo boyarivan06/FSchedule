@@ -43,7 +43,7 @@ func (repo *UserRepository) GetManyByParams(ctx context.Context, p UserParams) (
 	}
 
 	if p.UserName != nil {
-		add("name", *p.UserName)
+		add("username", *p.UserName)
 	}
 
 	if len(sets) == 0 {
@@ -57,12 +57,9 @@ func (repo *UserRepository) GetManyByParams(ctx context.Context, p UserParams) (
 		len(args),
 	)
 
-	tag, err := repo.Db.Exec(ctx, query, args...)
+	rows, err = repo.Db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
-	}
-	if tag.RowsAffected() == 0 {
-		return nil, sql.ErrNoRows
 	}
 	defer rows.Close()
 	for rows.Next() {

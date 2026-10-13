@@ -1,0 +1,404 @@
+openapi: 3.0.3
+info:
+  title: Children API
+  version: 1.0.2
+  description: |
+    REST API для управления пользователями, детьми и событиями.
+
+    **Семантика обновлений:** все `PUT`-эндпоинты принимают частичное тело
+    (params-структуры с nil-указателями) и фактически работают как PATCH.
+    Отсутствующие поля не изменяются.
+
+    **Семантика списков:** фильтры работают по точному совпадению (`=`),
+    не по подстроке.
+
+servers:
+  - url: http://localhost:8080
+    description: Локальный сервер
+
+tags:
+  - name: users
+  - name: children
+  - name: events
+
+paths:
+  # ================= USERS =================
+  /api/v1/users:
+    get:
+      tags: [users]
+      summary: Список пользователей по фильтрам
+      description: |
+        Возвращает пользователей, удовлетворяющих точному совпадению фильтров.
+        Если фильтры не переданы — репозиторий возвращает `nil, nil`,
+        что в JSON сериализуется как `null` (не `[]`).
+      operationId: getUsers
+      parameters:
+        - in: query
+          name: username
+          description: Точное совпадение username
+          schema: { type: string, example: "alice" }
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+                nullable: true
+        '404':
+          description: По фильтрам ничего не найдено (`sql.ErrNoRows`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+    post:
+      tags: [users]
+      summary: Создать пользователя
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserInput' }
+      responses:
+        '201':
+          description: Пользователь создан. Тело пустое — репозиторий не возвращает запись.
+          headers:
+            Location:
+              schema: { type: string, example: /api/v1/users/1 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /api/v1/users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [users]
+      summary: Получить пользователя по ID
+      operationId: getUser
+      responses:
+        '200':
+          description: Пользователь найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [users]
+      summary: Частично обновить пользователя
+      description: Поля с `null`/отсутствующие не изменяются (PATCH-семантика).
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserParams' }
+      responses:
+        '200': { description: Пользователь обновлён (или no-op при пустом теле) }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [users]
+      summary: Удалить пользователя
+      operationId: deleteUser
+      responses:
+        '204': { description: Пользователь удалён }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ================= CHILDREN =================
+  /api/v1/children:
+    get:
+      tags: [children]
+      summary: Список детей по фильтрам
+      description: Возвращает детей по точному совпадению фильтров.
+      operationId: getChildren
+      parameters:
+        - in: query
+          name: name
+          schema: { type: string, example: "Маша" }
+        - in: query
+          name: user_id
+          schema: { type: integer, format: int64, example: 1 }
+      responses:
+        '200':
+          description: Список детей
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Child' }
+        '404':
+          description: По фильтрам ничего не найдено (`sql.ErrNoRows`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+    post:
+      tags: [children]
+      summary: Создать ребёнка
+      operationId: createChild
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChildInput' }
+      responses:
+        '201':
+          description: Ребёнок создан
+          headers:
+            Location:
+              schema: { type: string, example: /api/v1/children/10 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /api/v1/children/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [children]
+      summary: Получить ребёнка по ID
+      operationId: getChild
+      responses:
+        '200':
+          description: Ребёнок найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Child' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [children]
+      summary: Частично обновить ребёнка
+      operationId: updateChild
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChildParams' }
+      responses:
+        '200': { description: Ребёнок обновлён (или no-op) }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [children]
+      summary: Удалить ребёнка
+      operationId: deleteChild
+      responses:
+        '204': { description: Ребёнок удалён }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ================= EVENTS =================
+  /api/v1/events:
+    get:
+      tags: [events]
+      summary: Список событий по фильтрам
+      operationId: getEvents
+      parameters:
+        - in: query
+          name: child_id
+          schema: { type: integer, format: int64, example: 10 }
+        - in: query
+          name: name
+          schema: { type: string, example: "День рождения" }
+        - in: query
+          name: repeat
+          schema: { type: integer, format: int64, enum: [0, 1, 2, 3, 4] }
+      responses:
+        '200':
+          description: Список событий
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Event' }
+        '404':
+          description: По фильтрам ничего не найдено
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+    post:
+      tags: [events]
+      summary: Создать событие
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventInput' }
+      responses:
+        '201':
+          description: Событие создано
+          headers:
+            Location:
+              schema: { type: string, example: /api/v1/events/100 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /api/v1/events/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [events]
+      summary: Получить событие по ID
+      operationId: getEvent
+      responses:
+        '200':
+          description: Событие найдено
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Event' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [events]
+      summary: Частично обновить событие
+      operationId: updateEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventParams' }
+      responses:
+        '200': { description: Событие обновлено (или no-op) }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [events]
+      summary: Удалить событие
+      operationId: deleteEvent
+      responses:
+        '204': { description: Событие удалено }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  parameters:
+    IdPath:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        example: 10
+
+  schemas:
+    # ---------- USERS ----------
+    User:
+      type: object
+      required: [id, username]
+      properties:
+        id:       { type: integer, format: int64, example: 1 }
+        username: { type: string, example: "alice" }
+
+    # Тело для POST — обязательное поле.
+    UserInput:
+      type: object
+      required: [username]
+      properties:
+        username: { type: string, minLength: 1, maxLength: 100, example: "alice" }
+
+    # Тело для PUT — все поля опциональны (nil = «не менять»).
+    # Внимание: в репозитории поле UserName мапится в колонку "name"
+    # в GetManyByParams и в "username" в Update — это баг, см. замечания.
+    UserParams:
+      type: object
+      description: Частичное обновление. Отсутствующие поля не изменяются.
+      properties:
+        username: { type: string, minLength: 1, maxLength: 100, example: "alice" }
+
+    # ---------- CHILDREN ----------
+    Child:
+      type: object
+      required: [id, name, user_id]
+      properties:
+        id:      { type: integer, format: int64, example: 10 }
+        name:    { type: string, example: "Маша" }
+        user_id: { type: integer, format: int64, example: 1 }
+
+    ChildInput:
+      type: object
+      required: [name, user_id]
+      properties:
+        name:    { type: string, minLength: 1, maxLength: 100, example: "Маша" }
+        user_id: { type: integer, format: int64, example: 1 }
+
+    ChildParams:
+      type: object
+      description: Частичное обновление. Отсутствующие поля не изменяются.
+      properties:
+        name:    { type: string, minLength: 1, maxLength: 100, example: "Маша" }
+        user_id: { type: integer, format: int64, example: 1 }
+
+    # ---------- EVENTS ----------
+    Event:
+      type: object
+      required: [id, name, start_at, end_at, repeat, child_id]
+      properties:
+        id:       { type: integer, format: int64, example: 100 }
+        name:     { type: string, example: "День рождения" }
+        start_at: { type: string, format: date-time, example: "2026-10-13T09:00:00Z" }
+        end_at:   { type: string, format: date-time, example: "2026-10-13T11:00:00Z" }
+        repeat:
+          type: integer
+          format: int64
+          enum: [0, 1, 2, 3, 4]
+          description: |
+            * `0` — без повторения
+            * `1` — каждый год
+            * `2` — каждый месяц
+            * `3` — каждую неделю
+            * `4` — каждый день
+          example: 1
+        child_id: { type: integer, format: int64, example: 10 }
+
+    EventInput:
+      type: object
+      required: [name, start_at, end_at, repeat, child_id]
+      properties:
+        name:     { type: string, minLength: 1, maxLength: 200, example: "День рождения" }
+        start_at: { type: string, format: date-time, example: "2026-10-13T09:00:00Z" }
+        end_at:   { type: string, format: date-time, example: "2026-10-13T11:00:00Z" }
+        repeat:   { type: integer, format: int64, enum: [0, 1, 2, 3, 4], default: 0 }
+        child_id: { type: integer, format: int64, example: 10 }
+
+    EventParams:
+      type: object
+      description: |
+        Частичное обновление. Отсутствующие поля не изменяются.
+        В Go-структуре все поля — указатели (`*string`, `*time.Time`, `*int64`).
+      properties:
+        name:     { type: string, minLength: 1, maxLength: 200 }
+        start_at: { type: string, format: date-time }
+        end_at:   { type: string, format: date-time }
+        repeat:   { type: integer, format: int64, enum: [0, 1, 2, 3, 4] }
+        child_id: { type: integer, format: int64 }
+
+    # ---------- COMMON ----------
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:       { type: string, example: not_found }
+        message:    { type: string, example: child not found }
+        request_id: { type: string, description: ID из middleware.RequestID }
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

@@ -55,12 +55,9 @@ func (repo *ChildRepository) GetManyByParams(ctx context.Context, p ChildParams)
 		)
 	}
 
-	tag, err := repo.Db.Exec(ctx, query, args...)
+	rows, err = repo.Db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
-	}
-	if tag.RowsAffected() == 0 {
-		return nil, sql.ErrNoRows
 	}
 	defer rows.Close()
 	for rows.Next() {
