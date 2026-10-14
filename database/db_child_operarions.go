@@ -49,11 +49,12 @@ func (repo *ChildRepository) GetManyByParams(ctx context.Context, p ChildParams)
 	} else {
 		args = append(args)
 		query = fmt.Sprintf(
-			"SELECT * FROM children WHERE ",
+			"SELECT * FROM children WHERE %s",
 			strings.Join(sets, " AND "),
-			len(args),
 		)
+
 	}
+	//fmt.Println(query)
 
 	rows, err = repo.Db.Query(ctx, query, args...)
 	if err != nil {

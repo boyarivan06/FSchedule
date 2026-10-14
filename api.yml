@@ -5,10 +5,6 @@ info:
   description: |
     REST API для управления пользователями, детьми и событиями.
 
-    **Семантика обновлений:** все `PUT`-эндпоинты принимают частичное тело
-    (params-структуры с nil-указателями) и фактически работают как PATCH.
-    Отсутствующие поля не изменяются.
-
     **Семантика списков:** фильтры работают по точному совпадению (`=`),
     не по подстроке.
 
@@ -85,7 +81,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/User' }
         '404': { $ref: '#/components/responses/NotFound' }
-    put:
+    patch:
       tags: [users]
       summary: Частично обновить пользователя
       description: Поля с `null`/отсутствующие не изменяются (PATCH-семантика).
@@ -168,7 +164,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Child' }
         '404': { $ref: '#/components/responses/NotFound' }
-    put:
+    patch:
       tags: [children]
       summary: Частично обновить ребёнка
       operationId: updateChild
@@ -252,7 +248,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Event' }
         '404': { $ref: '#/components/responses/NotFound' }
-    put:
+    patch:
       tags: [events]
       summary: Частично обновить событие
       operationId: updateEvent

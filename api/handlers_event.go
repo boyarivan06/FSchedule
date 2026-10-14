@@ -5,13 +5,64 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func (h *Handler) GetEvents(w http.ResponseWriter, r *http.Request) {
+	var params database.EventParams
+	q := r.URL.Query()
+
+	if q.Has("name") {
+		params.Name = new(q.Get("name"))
+	}
+
+	if q.Has("start_at") {
+		t, err := time.Parse(time.RFC3339, q.Get("start_at"))
+		if err != nil {
+			http.Error(w, "invalid start_at", http.StatusBadRequest)
+			return
+		}
+		params.StartAt = new(t)
+	}
+
+	if q.Has("end_at") {
+		t, err := time.Parse(time.RFC3339, q.Get("end_at"))
+		if err != nil {
+			http.Error(w, "invalid end_at", http.StatusBadRequest)
+			return
+		}
+		params.EndAt = new(t)
+	}
+
+	if q.Has("repeat") {
+		v, err := strconv.ParseInt(q.Get("repeat"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid repeat", http.StatusBadRequest)
+			return
+		}
+		params.Repeat = new(v)
+	}
+
+	if q.Has("child_id") {
+		v, err := strconv.ParseInt(q.Get("child_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid child_id", http.StatusBadRequest)
+			return
+		}
+		params.ChildID = new(v)
+	}
+
+	if params.Name == nil && params.StartAt == nil && params.EndAt == nil &&
+		params.Repeat == nil && params.ChildID == nil {
+		http.Error(w, "nothing to update", http.StatusBadRequest)
+		return
+	}
+
 	events, err := h.store.Events.GetManyByParams(r.Context(),
-		database.EventParams{})
+		params)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "error getting events")
 		return
@@ -65,11 +116,6 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	c, err = h.store.Events.GetById(r.Context(), id)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "no such event")
-		return
-	}
-	var newEvent database.Event
-	if err = json.NewDecoder(r.Body).Decode(&newEvent); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
 	err = h.store.Events.Update(r.Context(), c.ID, params)

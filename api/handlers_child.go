@@ -5,14 +5,31 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func (h *Handler) GetChildren(w http.ResponseWriter, r *http.Request) {
+	var params database.ChildParams
+	q := r.URL.Query()
+
+	if q.Has("name") {
+		params.Name = new(q.Get("name"))
+	}
+	if q.Has("user_id") {
+		userID, err := strconv.Atoi(q.Get("user_id"))
+		if err != nil {
+			http.Error(w, "invalid user_id", http.StatusBadRequest)
+			return
+		}
+		params.UserID = new(int64(userID))
+	}
+
 	children, err := h.store.Children.GetManyByParams(r.Context(),
-		database.ChildParams{})
+		params)
 	if err != nil {
+		fmt.Println(err)
 		writeError(w, http.StatusInternalServerError, "error getting children")
 		return
 	}
@@ -65,11 +82,6 @@ func (h *Handler) UpdateChild(w http.ResponseWriter, r *http.Request) {
 	c, err = h.store.Children.GetById(r.Context(), id)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "no such child")
-		return
-	}
-	var newChild database.Child
-	if err = json.NewDecoder(r.Body).Decode(&newChild); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
 	err = h.store.Children.Update(r.Context(), c.ID, params)

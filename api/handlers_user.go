@@ -25,19 +25,19 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var u database.User
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid json")
-		return
-	}
-	if u.Username == "" {
+	var user database.User
+	q := r.URL.Query()
+	if q.Has("username") {
+		user.Username = q.Get("username")
+		if _, err0 := h.store.Users.GetByUsername(r.Context(), user.Username); err0 == nil {
+			writeError(w, http.StatusConflict, "such user is already created")
+			return
+		}
+	} else {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
-	} else if _, err0 := h.store.Users.GetByUsername(r.Context(), u.Username); err0 == nil {
-		writeError(w, http.StatusConflict, "such user is already created")
-		return
 	}
-	err := h.store.Users.Create(r.Context(), u)
+	err := h.store.Users.Create(r.Context(), user)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "error creating user")
 		return
@@ -64,19 +64,12 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such user")
 		return
 	}
-	var newUser database.User
+	if params.UserName != nil {
+		if _, err0 := h.store.Users.GetByUsername(r.Context(), *params.UserName); err0 == nil {
+			writeError(w, http.StatusBadRequest, "user exists")
+		}
+	}
 
-	if err = json.NewDecoder(r.Body).Decode(&newUser); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid json")
-		return
-	}
-	if newUser.Username == "" {
-		writeError(w, http.StatusBadRequest, "name is required")
-		return
-	} else if _, err0 := h.store.Users.GetByUsername(r.Context(), newUser.Username); err0 == nil {
-		writeError(w, http.StatusConflict, "such user is already created")
-		return
-	}
 	err = h.store.Users.Update(r.Context(), u.ID, params)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "error updating user")

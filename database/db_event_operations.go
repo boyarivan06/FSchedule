@@ -62,9 +62,8 @@ func (repo *EventRepository) GetManyByParams(ctx context.Context, p EventParams)
 	} else {
 		args = append(args)
 		query = fmt.Sprintf(
-			"SELECT * FROM events WHERE ",
+			"SELECT * FROM events WHERE %s",
 			strings.Join(sets, " AND "),
-			len(args),
 		)
 	}
 

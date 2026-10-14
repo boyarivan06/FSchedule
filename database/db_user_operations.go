@@ -52,9 +52,8 @@ func (repo *UserRepository) GetManyByParams(ctx context.Context, p UserParams) (
 
 	args = append(args)
 	query := fmt.Sprintf(
-		"SELECT * FROM users WHERE ",
+		"SELECT * FROM users WHERE %s",
 		strings.Join(sets, " AND "),
-		len(args),
 	)
 
 	rows, err = repo.Db.Query(ctx, query, args...)
