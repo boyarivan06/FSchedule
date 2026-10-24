@@ -24,7 +24,7 @@ type EventParams struct {
 
 func (repo *EventRepository) GetById(ctx context.Context, id int) (Event, error) {
 	var e Event
-	err := repo.Db.QueryRow(ctx, "SELECT * FROM events WHERE id = $1", id).Scan(&e.ID, &e.Name, &e.ChildID, &e.StartAt, &e.EndAt, &e.Repeat)
+	err := repo.Db.QueryRow(ctx, "SELECT * FROM events WHERE id = $1", id).Scan(&e.ID, &e.Name, &e.StartAt, &e.EndAt, &e.Repeat, &e.ChildID)
 	return e, err
 }
 func (repo *EventRepository) GetManyByParams(ctx context.Context, p EventParams) ([]Event, error) {
@@ -83,9 +83,14 @@ func (repo *EventRepository) GetManyByParams(ctx context.Context, p EventParams)
 	return events, err
 }
 
-func (repo *EventRepository) Create(ctx context.Context, e Event) error {
+func (repo *EventRepository) Create(ctx context.Context, e Event) (Event, error) {
 	_, err := repo.Db.Exec(ctx, "INSERT INTO events (name, start_at, end_at, repeat, child_id) VALUES ($1, $2, $3, $4, $5)", e.Name, e.StartAt, e.EndAt, e.Repeat, e.ChildID)
-	return err
+	event := Event{}
+	err = repo.Db.QueryRow(ctx, "SELECT * FROM events WHERE name = $1 AND child_id = $2 AND start_at = $3", e.Name, e.ChildID, e.StartAt).Scan(&event.ID, &event.Name, &event.StartAt, &event.EndAt, &event.Repeat, &event.ChildID)
+	if err != nil {
+		return Event{}, err
+	}
+	return event, err
 }
 
 func (repo *EventRepository) Update(ctx context.Context, id int64, p EventParams) error {

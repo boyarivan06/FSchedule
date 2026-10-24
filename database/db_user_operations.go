@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -74,7 +73,8 @@ func (repo *UserRepository) GetByUsername(ctx context.Context, username string) 
 
 func (repo *UserRepository) Create(ctx context.Context, u User) error {
 	_, err := repo.Db.Exec(ctx, "INSERT INTO users (username) VALUES ($1)", u.Username)
-	return err
+
+	return err // TODO: return this user!!
 }
 
 func (repo *UserRepository) Update(ctx context.Context, id int64, p UserParams) error {
@@ -103,13 +103,13 @@ func (repo *UserRepository) Update(ctx context.Context, id int64, p UserParams) 
 		len(args),
 	)
 
-	tag, err := repo.Db.Exec(ctx, query, args...)
+	_, err := repo.Db.Exec(ctx, query, args...)
 	if err != nil {
 		return err
 	}
-	if tag.RowsAffected() == 0 {
-		return sql.ErrNoRows
-	}
+	//if tag.RowsAffected() == 0 {
+	//	return sql.ErrNoRows
+	//}
 	return nil
 }
 

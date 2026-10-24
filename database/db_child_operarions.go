@@ -72,9 +72,14 @@ func (repo *ChildRepository) GetManyByParams(ctx context.Context, p ChildParams)
 	return children, err
 }
 
-func (repo *ChildRepository) Create(ctx context.Context, c Child) error {
+func (repo *ChildRepository) Create(ctx context.Context, c Child) (Child, error) {
 	_, err := repo.Db.Exec(ctx, "INSERT INTO children (name, user_id) VALUES ($1, $2)", c.Name, c.UserID)
-	return err
+	child := Child{}
+	err = repo.Db.QueryRow(ctx, "SELECT * FROM children WHERE name = $1 AND user_id = $2", c.Name, c.UserID).Scan(&child.ID, &child.Name, &child.UserID)
+	if err != nil {
+		return Child{}, err
+	}
+	return child, err
 }
 
 func (repo *ChildRepository) Update(ctx context.Context, id int64, p ChildParams) error {

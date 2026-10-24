@@ -94,6 +94,7 @@ func TestUserRepository_Update(t *testing.T) {
 	biba, err := repo.GetByUsername(ctx, "Biba")
 	require.NoError(t, err)
 	require.NoError(t, repo.Update(ctx, biba.ID, UserParams{UserName: new("Johnson")}))
+	require.NoError(t, repo.Update(ctx, biba.ID, UserParams{}))
 	new_biba, err := repo.GetById(ctx, int(biba.ID))
 	require.NoError(t, err)
 	require.Equal(t, new_biba.ID, biba.ID)
