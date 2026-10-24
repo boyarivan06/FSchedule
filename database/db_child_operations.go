@@ -27,22 +27,7 @@ func (repo *ChildRepository) GetManyByParams(ctx context.Context, p ChildParams)
 	var children []Child
 	var rows pgx.Rows
 	var err error
-	var (
-		sets []string
-		args []any
-	)
-
-	add := func(col string, val any) {
-		args = append(args, val)
-		sets = append(sets, fmt.Sprintf("%s = $%d", col, len(args)))
-	}
-
-	if p.Name != nil {
-		add("name", *p.Name)
-	}
-	if p.UserID != nil {
-		add("user_id", *p.UserID)
-	}
+	sets, args := prepareChildParams(p)
 	var query string
 	if len(sets) == 0 {
 		query = "SELECT * FROM children"
@@ -70,6 +55,26 @@ func (repo *ChildRepository) GetManyByParams(ctx context.Context, p ChildParams)
 		children = append(children, c)
 	}
 	return children, err
+}
+
+func prepareChildParams(p ChildParams) ([]string, []any) {
+	var (
+		sets []string
+		args []any
+	)
+
+	add := func(col string, val any) {
+		args = append(args, val)
+		sets = append(sets, fmt.Sprintf("%s = $%d", col, len(args)))
+	}
+
+	if p.Name != nil {
+		add("name", *p.Name)
+	}
+	if p.UserID != nil {
+		add("user_id", *p.UserID)
+	}
+	return sets, args
 }
 
 func (repo *ChildRepository) Create(ctx context.Context, c Child) (Child, error) {

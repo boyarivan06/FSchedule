@@ -57,12 +57,12 @@ func (h *Handler) CreateChild(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
-	err := h.store.Children.Create(r.Context(), c)
+	child, err := h.store.Children.Create(r.Context(), c)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "error creating child")
 		return
 	}
-	writeResponse(w, http.StatusCreated)
+	writeJSON(w, http.StatusCreated, child)
 }
 
 func (h *Handler) UpdateChild(w http.ResponseWriter, r *http.Request) {

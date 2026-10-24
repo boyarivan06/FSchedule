@@ -91,12 +91,12 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
-	err := h.store.Events.Create(r.Context(), e)
+	event, err := h.store.Events.Create(r.Context(), e)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "error creating event")
 		return
 	}
-	writeResponse(w, http.StatusCreated)
+	writeJSON(w, http.StatusCreated, event)
 }
 
 func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {

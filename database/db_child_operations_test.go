@@ -8,24 +8,26 @@ import (
 )
 
 func TestChildRepository_Create(t *testing.T) {
-	pool := setupTestDb(t)
+	pool := SetupTestDb(t)
 	repo := &ChildRepository{pool}
 	ctx := context.Background()
 	userRepo := &UserRepository{pool}
-	require.NoError(t, userRepo.Create(ctx, User{Username: "Ivan"}))
-	_, err := repo.Create(ctx, Child{Name: "Petya", UserID: 1})
+	ivan, err := userRepo.Create(ctx, User{Username: "Ivan"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, Child{Name: "Petya", UserID: ivan.ID})
 	require.NoError(t, err)
 	_, err = repo.Create(ctx, Child{Name: "Fedya", UserID: 2})
 	require.Error(t, err)
 }
 
 func TestChildRepository_Get(t *testing.T) {
-	pool := setupTestDb(t)
+	pool := SetupTestDb(t)
 	repo := &ChildRepository{pool}
 	ctx := context.Background()
 	userRepo := &UserRepository{pool}
-	require.NoError(t, userRepo.Create(ctx, User{Username: "Ivan"}))
-	_, err := repo.Create(ctx, Child{Name: "Petya", UserID: 1})
+	ivan, err := userRepo.Create(ctx, User{Username: "Ivan"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, Child{Name: "Petya", UserID: ivan.ID})
 	require.NoError(t, err)
 	children, err := repo.GetManyByParams(ctx, ChildParams{Name: new("Petya")})
 	require.NoError(t, err)
@@ -37,12 +39,13 @@ func TestChildRepository_Get(t *testing.T) {
 }
 
 func TestChildRepository_Update(t *testing.T) {
-	pool := setupTestDb(t)
+	pool := SetupTestDb(t)
 	repo := &ChildRepository{pool}
 	ctx := context.Background()
 	userRepo := &UserRepository{pool}
-	require.NoError(t, userRepo.Create(ctx, User{Username: "Ivan"}))
-	child, err := repo.Create(ctx, Child{Name: "Petya", UserID: 1})
+	ivan, err := userRepo.Create(ctx, User{Username: "Ivan"})
+	require.NoError(t, err)
+	child, err := repo.Create(ctx, Child{Name: "Petya", UserID: ivan.ID})
 	require.NoError(t, err)
 	require.NoError(t, repo.Update(ctx, child.ID, ChildParams{Name: new("Fedya")}))
 	newChild, err := repo.GetById(ctx, int(child.ID))
@@ -51,12 +54,13 @@ func TestChildRepository_Update(t *testing.T) {
 }
 
 func TestChildRepository_Delete(t *testing.T) {
-	pool := setupTestDb(t)
+	pool := SetupTestDb(t)
 	repo := &ChildRepository{pool}
 	ctx := context.Background()
 	userRepo := &UserRepository{pool}
-	require.NoError(t, userRepo.Create(ctx, User{Username: "Ivan"}))
-	child, err := repo.Create(ctx, Child{Name: "Petya", UserID: 1})
+	ivan, err := userRepo.Create(ctx, User{Username: "Ivan"})
+	require.NoError(t, err)
+	child, err := repo.Create(ctx, Child{Name: "Petya", UserID: ivan.ID})
 	require.NoError(t, err)
 	require.NoError(t, repo.Delete(ctx, child.ID))
 	_, err = repo.GetById(ctx, int(child.ID))

@@ -37,12 +37,12 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "name is required")
 		return
 	}
-	err := h.store.Users.Create(r.Context(), user)
+	user, err := h.store.Users.Create(r.Context(), user)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "error creating user")
 		return
 	}
-	writeResponse(w, http.StatusCreated)
+	writeJSON(w, http.StatusCreated, user)
 }
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {

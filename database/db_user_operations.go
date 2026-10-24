@@ -71,26 +71,15 @@ func (repo *UserRepository) GetByUsername(ctx context.Context, username string) 
 //	return users, err
 //}
 
-func (repo *UserRepository) Create(ctx context.Context, u User) error {
+func (repo *UserRepository) Create(ctx context.Context, u User) (User, error) {
 	_, err := repo.Db.Exec(ctx, "INSERT INTO users (username) VALUES ($1)", u.Username)
-
-	return err // TODO: return this user!!
+	var user User
+	err = repo.Db.QueryRow(ctx, "SELECT * FROM users WHERE username = $1", u.Username).Scan(&user.ID, &user.Username)
+	return user, err
 }
 
 func (repo *UserRepository) Update(ctx context.Context, id int64, p UserParams) error {
-	var (
-		sets []string
-		args []any
-	)
-
-	add := func(col string, val any) {
-		args = append(args, val)
-		sets = append(sets, fmt.Sprintf("%s = $%d", col, len(args)))
-	}
-
-	if p.UserName != nil {
-		add("username", *p.UserName)
-	}
+	sets, args := prepareUserParams(p)
 
 	if len(sets) == 0 {
 		return nil
@@ -111,6 +100,23 @@ func (repo *UserRepository) Update(ctx context.Context, id int64, p UserParams) 
 	//	return sql.ErrNoRows
 	//}
 	return nil
+}
+
+func prepareUserParams(p UserParams) ([]string, []any) {
+	var (
+		sets []string
+		args []any
+	)
+
+	add := func(col string, val any) {
+		args = append(args, val)
+		sets = append(sets, fmt.Sprintf("%s = $%d", col, len(args)))
+	}
+
+	if p.UserName != nil {
+		add("username", *p.UserName)
+	}
+	return sets, args
 }
 
 func (repo *UserRepository) Delete(ctx context.Context, id int64) error {

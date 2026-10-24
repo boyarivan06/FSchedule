@@ -13,11 +13,10 @@ func NewRouter(h *Handler, logger *slog.Logger) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(middleware.Logger)
-	/// r.Use(recoverer(logger)) TODO: WHY?
+	r.Use(recoverer(logger))
 	r.Route("/api/v1", func(r chi.Router) {
 		// users
 		r.Get("/users/{id}", h.GetUser)
-
 		r.Post("/users", h.CreateUser)
 		r.Patch("/users/{id}", h.UpdateUser)
 		r.Delete("/users/{id}", h.DeleteUser)

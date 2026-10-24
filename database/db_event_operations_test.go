@@ -9,13 +9,14 @@ import (
 )
 
 func TestEventRepository_Create(t *testing.T) {
-	pool := setupTestDb(t)
+	pool := SetupTestDb(t)
 	repo := &EventRepository{pool}
 	ctx := context.Background()
 	userRepo := &UserRepository{pool}
 	childRepo := &ChildRepository{pool}
-	require.NoError(t, userRepo.Create(ctx, User{Username: "Ivan"}))
-	petya, err := childRepo.Create(ctx, Child{Name: "Petya", UserID: 1})
+	ivan, err := userRepo.Create(ctx, User{Username: "Ivan"})
+	require.NoError(t, err)
+	petya, err := childRepo.Create(ctx, Child{Name: "Petya", UserID: ivan.ID})
 	require.NoError(t, err)
 	_, err = repo.Create(ctx, Event{Name: "theatre", StartAt: time.Date(2021, 5, 4, 1, 1, 1, 0, time.Local),
 		EndAt:  time.Date(2021, 5, 5, 1, 1, 1, 0, time.Local),
@@ -28,13 +29,14 @@ func TestEventRepository_Create(t *testing.T) {
 }
 
 func TestEventRepository_Get(t *testing.T) {
-	pool := setupTestDb(t)
+	pool := SetupTestDb(t)
 	repo := &EventRepository{pool}
 	ctx := context.Background()
 	userRepo := &UserRepository{pool}
 	childRepo := &ChildRepository{pool}
-	require.NoError(t, userRepo.Create(ctx, User{Username: "Ivan"}))
-	petya, err := childRepo.Create(ctx, Child{Name: "Petya", UserID: 1})
+	ivan, err := userRepo.Create(ctx, User{Username: "Ivan"})
+	require.NoError(t, err)
+	petya, err := childRepo.Create(ctx, Child{Name: "Petya", UserID: ivan.ID})
 	require.NoError(t, err)
 	e, err := repo.Create(ctx, Event{Name: "theatre", StartAt: time.Date(2021, 5, 4, 1, 1, 1, 0, time.Local),
 		EndAt:  time.Date(2021, 5, 5, 1, 1, 1, 0, time.Local),
@@ -48,13 +50,14 @@ func TestEventRepository_Get(t *testing.T) {
 }
 
 func TestEventRepository_Update(t *testing.T) {
-	pool := setupTestDb(t)
+	pool := SetupTestDb(t)
 	repo := &EventRepository{pool}
 	ctx := context.Background()
 	userRepo := &UserRepository{pool}
 	childRepo := &ChildRepository{pool}
-	require.NoError(t, userRepo.Create(ctx, User{Username: "Ivan"}))
-	petya, err := childRepo.Create(ctx, Child{Name: "Petya", UserID: 1})
+	ivan, err := userRepo.Create(ctx, User{Username: "Ivan"})
+	require.NoError(t, err)
+	petya, err := childRepo.Create(ctx, Child{Name: "Petya", UserID: ivan.ID})
 	require.NoError(t, err)
 	e, err := repo.Create(ctx, Event{Name: "theatre", StartAt: time.Date(2021, 5, 4, 1, 1, 1, 0, time.Local),
 		EndAt:  time.Date(2021, 5, 5, 1, 1, 1, 0, time.Local),
@@ -69,13 +72,14 @@ func TestEventRepository_Update(t *testing.T) {
 }
 
 func TestEventRepository_Delete(t *testing.T) {
-	pool := setupTestDb(t)
+	pool := SetupTestDb(t)
 	repo := &EventRepository{pool}
 	ctx := context.Background()
 	userRepo := &UserRepository{pool}
 	childRepo := &ChildRepository{pool}
-	require.NoError(t, userRepo.Create(ctx, User{Username: "Ivan"}))
-	petya, err := childRepo.Create(ctx, Child{Name: "Petya", UserID: 1})
+	ivan, err := userRepo.Create(ctx, User{Username: "Ivan"})
+	require.NoError(t, err)
+	petya, err := childRepo.Create(ctx, Child{Name: "Petya", UserID: ivan.ID})
 	require.NoError(t, err)
 	e, err := repo.Create(ctx, Event{Name: "theatre", StartAt: time.Date(2021, 5, 4, 1, 1, 1, 0, time.Local),
 		EndAt:  time.Date(2021, 5, 5, 1, 1, 1, 0, time.Local),
