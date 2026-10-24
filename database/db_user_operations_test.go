@@ -15,11 +15,11 @@ func TestUserRepository_Get(t *testing.T) {
 	ctx := context.Background()
 	user, err := repo.Create(ctx, User{Username: "ivan"})
 	require.NoError(t, err)
-	require.Equal(t, "alice", user.Username)
+	require.Equal(t, "ivan", user.Username)
 	id := user.ID
 	newUser, err := repo.GetById(ctx, int(id))
 	require.NoError(t, err)
-	require.Equal(t, "alice", newUser.Username)
+	require.Equal(t, "ivan", newUser.Username)
 }
 
 //func TestUserRepository_GetMany(t *testing.T) {
