@@ -5,6 +5,7 @@ import (
 	"FSchedule/database"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -18,7 +19,11 @@ import (
 
 func main() {
 	// database
-	const connStr = "postgres://go_user:machine_banana@localhost:5432/f_schedule"
+	connStr := os.Getenv("DATABASEq_URL")
+	fmt.Println(connStr)
+	if connStr == "" {
+		connStr = "postgres://go_user:machine_banana@localhost:5432/f_schedule"
+	}
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	initCtx, cancelInit := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelInit()
