@@ -88,22 +88,7 @@ func (repo *ChildRepository) Create(ctx context.Context, c Child) (Child, error)
 }
 
 func (repo *ChildRepository) Update(ctx context.Context, id int64, p ChildParams) error {
-	var (
-		sets []string
-		args []any
-	)
-
-	add := func(col string, val any) {
-		args = append(args, val)
-		sets = append(sets, fmt.Sprintf("%s = $%d", col, len(args)))
-	}
-
-	if p.Name != nil {
-		add("name", *p.Name)
-	}
-	if p.UserID != nil {
-		add("user_id", *p.UserID)
-	}
+	sets, args := prepareChildParams(p)
 
 	if len(sets) == 0 {
 		return nil

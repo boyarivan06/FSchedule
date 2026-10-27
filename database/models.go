@@ -22,3 +22,9 @@ type Event struct {
 	Repeat  int64     `database:"repeat" json:"repeat"` // 0 - no repeat, 1 - every year, 2 - every month, 3 - every week, 4 - every day, TODO: можно мигрировать на int8
 	ChildID int64     `database:"child_id" json:"child_id"`
 }
+
+type Family struct {
+	ID      int64  `database:"id" json:"id"`
+	Name    string `database:"name" json:"name"`
+	AdminID int64  `database:"admin_id" json:"admin_id"`
+}
