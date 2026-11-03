@@ -9,9 +9,10 @@ type User struct {
 }
 
 type Child struct {
-	ID     int64  `database:"id" json:"id"`
-	Name   string `database:"name" json:"name"`
-	UserID int64  `database:"user_id" json:"user_id"`
+	ID       int64  `database:"id" json:"id"`
+	Name     string `database:"name" json:"name"`
+	UserID   int64  `database:"user_id" json:"user_id"`
+	FamilyID int64  `database:"family_id" json:"family_id"`
 }
 
 type Event struct {

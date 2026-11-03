@@ -14,13 +14,14 @@ type ChildRepository struct {
 	Db *pgxpool.Pool
 }
 type ChildParams struct {
-	Name   *string `database:"name" json:"name"`
-	UserID *int64  `database:"user_id" json:"user_id"`
+	Name     *string `database:"name" json:"name"`
+	UserID   *int64  `database:"user_id" json:"user_id"`
+	FamilyID *int64  `database:"family_id" json:"family_id"`
 }
 
 func (repo *ChildRepository) GetById(ctx context.Context, id int) (Child, error) {
 	var e Child
-	err := repo.Db.QueryRow(ctx, "SELECT * FROM children WHERE id = $1", id).Scan(&e.ID, &e.Name, &e.UserID)
+	err := repo.Db.QueryRow(ctx, "SELECT * FROM children WHERE id = $1", id).Scan(&e.ID, &e.Name, &e.UserID, &e.FamilyID)
 	return e, err
 }
 func (repo *ChildRepository) GetManyByParams(ctx context.Context, p ChildParams) ([]Child, error) {
@@ -37,7 +38,6 @@ func (repo *ChildRepository) GetManyByParams(ctx context.Context, p ChildParams)
 			"SELECT * FROM children WHERE %s",
 			strings.Join(sets, " AND "),
 		)
-
 	}
 	//fmt.Println(query)
 
@@ -48,7 +48,7 @@ func (repo *ChildRepository) GetManyByParams(ctx context.Context, p ChildParams)
 	defer rows.Close()
 	for rows.Next() {
 		var c Child
-		err = rows.Scan(&c.ID, &c.Name, &c.UserID)
+		err = rows.Scan(&c.ID, &c.Name, &c.UserID, &c.FamilyID)
 		if err != nil {
 			return nil, err
 		}
@@ -74,13 +74,16 @@ func prepareChildParams(p ChildParams) ([]string, []any) {
 	if p.UserID != nil {
 		add("user_id", *p.UserID)
 	}
+	if p.FamilyID != nil {
+		add("family_id", *p.UserID)
+	}
 	return sets, args
 }
 
 func (repo *ChildRepository) Create(ctx context.Context, c Child) (Child, error) {
-	_, err := repo.Db.Exec(ctx, "INSERT INTO children (name, user_id) VALUES ($1, $2)", c.Name, c.UserID)
+	_, err := repo.Db.Exec(ctx, "INSERT INTO children (name, user_id, family_id) VALUES ($1, $2, $3)", c.Name, c.UserID, c.FamilyID)
 	child := Child{}
-	err = repo.Db.QueryRow(ctx, "SELECT * FROM children WHERE name = $1 AND user_id = $2", c.Name, c.UserID).Scan(&child.ID, &child.Name, &child.UserID)
+	err = repo.Db.QueryRow(ctx, "SELECT * FROM children WHERE name = $1 AND user_id = $2", c.Name, c.UserID).Scan(&child.ID, &child.Name, &child.UserID, &child.FamilyID)
 	if err != nil {
 		return Child{}, err
 	}
